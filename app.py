@@ -47,7 +47,7 @@ with col2:
 
 st.markdown(f"<h1 style='text-align: center; font-size: 80px; margin-bottom: 0;'>{weather_icon}</h1>", unsafe_allow_html=True)
 st.markdown(f"<h2 style='text-align: center; color: {color};'>{weather_text}</h2>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center;'>변동지수(VIX): <b>{vix}</b></p>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center;'>변동성지수(VIX): <b>{vix}</b></p>", unsafe_allow_html=True)
 
 st.info(f"💡 가이드: {advice}")
 st.divider()
