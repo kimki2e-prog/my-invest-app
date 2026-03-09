@@ -2,58 +2,55 @@ import streamlit as st
 from PIL import Image
 import yfinance as yf
 
-# 1. 페이지 설정
+# 1. 페이지 설정 (브라우저 탭 아이콘 및 제목)
 try:
     img = Image.open("logo.png")
-    st.set_page_config(page_title="투자 기상청", page_icon=img)
+    st.set_page_config(page_title="투자 기상청", page_icon=img, layout="centered")
 except:
     st.set_page_config(page_title="투자 기상청")
 
-# 2. 실시간 데이터 가져오기 (에러 방지 로직 추가)
+# 2. 실시간 데이터 가져오기 함수 (VIX 지수)
 def get_market_data():
     try:
-        # VIX 데이터를 가져옵니다
         vix_ticker = yf.Ticker("^VIX")
-        # 안전하게 최근 5일치 데이터를 가져와서 마지막 값을 씁니다
-        vix_history = vix_ticker.history(period="5d")
-        
+        vix_history = vix_ticker.history(period="5d") # 안전하게 5일치 확보
         if not vix_history.empty:
-            current_vix = vix_history['Close'].iloc[-1]
-            return round(current_vix, 2)
+            return round(vix_history['Close'].iloc[-1], 2)
         else:
-            return 20.0  # 데이터를 못 가져오면 '보통' 수준인 20으로 설정
+            return 20.0
     except:
-        return 20.0  # 에러 발생 시 기본값 20 반환
+        return 20.0
 
-# 3. 데이터 로드
 vix = get_market_data()
 
-# 4. 날씨 및 비중 결정
+# 3. 데이터에 따른 날씨 및 자산 비중 결정 로직
 if vix > 30:
-    weather, color, advice = "⛈️ 폭풍우", "#FF4B4B", "매우 위험! 현금을 확보하세요."
-    stock, bond, cash = 20, 50, 30
+    weather_icon = "⛈️"
+    weather_text = "폭풍우 (매우 위험)"
+    bg_color = "#FF4B4B" # 빨간색 계열
+    advice = "시장이 매우 불안정합니다. 현금 비중을 최대한 확보하고 관망하세요."
+    stock, bond, cash, commodity = 20, 50, 20, 10
 elif vix > 20:
-    weather, color, advice = "☁️ 흐림", "#FFA500", "주의가 필요합니다. 무리하지 마세요."
-    stock, bond, cash = 40, 40, 20
+    weather_icon = "☁️"
+    weather_text = "흐림 (주의)"
+    bg_color = "#FFA500" # 주황색 계열
+    advice = "변동성이 커지고 있습니다. 무리한 투자는 피하고 자산 배분을 점검하세요."
+    stock, bond, cash, commodity = 40, 30, 20, 10
 else:
-    weather, color, advice = "☀️ 맑음", "#2E8B57", "시장이 안정적입니다. 계획대로 투자하세요."
-    stock, bond, cash = 60, 30, 10
+    weather_icon = "☀️"
+    weather_text = "맑음 (안정)"
+    bg_color = "#2E8B57" # 초록색 계열
+    advice = "시장이 평온합니다. 정해진 계획에 따라 포트폴리오를 유지하세요."
+    stock, bond, cash, commodity = 60, 20, 10, 10
 
-# 5. UI 그리기
+# 4. 화면 UI 구성 (첫 번째 디자인 스타일)
+# 상단 로고 중앙 배치
 col1, col2, col3 = st.columns([1,1,1])
 with col2:
-    try: st.image("logo.png", width=120)
-    except: pass
+    try:
+        st.image("logo.png", width=150)
+    except:
+        st.write("이미지 로딩 중...")
 
-st.markdown(f"<h1 style='text-align: center; color: {color};'>{weather}</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center;'>현재 시장 공포지수(VIX): <b>{vix}</b></p>", unsafe_allow_html=True)
-
-st.info(f"💡 **오늘의 가이드:** {advice}")
-
-st.divider()
-
-st.subheader("🚥 추천 자산 비중")
-c1, c2, c3 = st.columns(3)
-c1.metric("주식", f"{stock}%")
-c2.metric("채권", f"{bond}%")
-c3.metric("현금", f"{cash}%")
+# 날씨 및 지수 표시
+st.markdown(f"<h1 style='
