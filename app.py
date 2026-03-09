@@ -1,49 +1,52 @@
 import streamlit as st
-import pandas as pd
+from PIL import Image
+import yfinance as yf # 실시간 금융 데이터를 가져오는 도구
 
-# 1. 앱 페이지 설정 (모바일 최적화)
-st.set_page_config(page_title="투자 기상청", layout="centered")
+# 1. 페이지 설정
+try:
+    img = Image.open("logo.png")
+    st.set_page_config(page_title="투자 기상청", page_icon=img)
+except:
+    st.set_page_config(page_title="투자 기상청")
 
-# 2. 가상의 지표 데이터 (실제 서비스 시 API 연동)
-vix = 22.5
-fear_greed = 35
-cli_trend = "down" # 경기선행지수 하락 중
+# 2. 실시간 데이터 가져오기 함수
+def get_market_data():
+    # VIX 지수(공포지수) 가져오기
+    vix_data = yf.Ticker("^VIX").history(period="1d")
+    current_vix = vix_data['Close'].iloc[-1]
+    return round(current_vix, 2)
 
-# 3. 자산 배분 로직 (앞서 만든 로직 적용)
-def get_allocation(vix, fg, cli):
-    # 단순화된 로직 예시
-    if fg < 30 and cli == "down":
-        return {"날씨": "⛈️ 폭풍우", "색상": "#4A4A4A", "주식": 20, "채권": 50, "현금": 20, "원자재": 10}
-    elif fg > 70:
-        return {"날씨": "☀️ 폭염(과열)", "색상": "#FF4B4B", "주식": 30, "채권": 30, "현금": 35, "원자재": 5}
-    else:
-        return {"날씨": "🌤️ 구름조금", "색상": "#00AEEF", "주식": 50, "채권": 30, "현금": 10, "원자재": 10}
+# 3. 로직: VIX 지수에 따른 날씨 결정
+vix = get_market_data()
 
-data = get_allocation(vix, fear_greed, cli_trend)
+if vix > 30:
+    weather = "⛈️ 폭풍우 (매우 위험)"
+    advice = "시장이 매우 불안합니다. 현금을 최대한 확보하세요!"
+    stock_p, bond_p, cash_p = 20, 50, 30
+elif vix > 20:
+    weather = "☁️ 흐림 (주의)"
+    advice = "변동성이 커지고 있습니다. 무리한 추격 매수는 금물!"
+    stock_p, bond_p, cash_p = 40, 40, 20
+else:
+    weather = "☀️ 맑음 (안정)"
+    advice = "시장이 평온합니다. 계획대로 투자를 진행하세요."
+    stock_p, bond_p, cash_p = 60, 30, 10
 
-# 4. UI 렌더링
-st.title("🌡️ 오늘의 투자 기상도")
-st.markdown(f"<h1 style='text-align: center; font-size: 80px;'>{data['날씨']}</h1>", unsafe_allow_html=True)
-st.info(f"현재 시장은 **'{data['날씨']}'** 상태입니다. 안전 자산 비중을 점검하세요.")
+# 4. 화면 UI 그리기
+col1, col2, col3 = st.columns([1,1,1])
+with col2:
+    st.image("logo.png", width=120)
+
+st.markdown(f"<h1 style='text-align: center;'>{weather}</h1>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center;'>현재 공포지수(VIX): <b>{vix}</b></p>", unsafe_allow_html=True)
+
+st.success(f"💡 **오늘의 가이드:** {advice}")
 
 st.divider()
 
-# 5. 자산별 신호등 UI
-st.subheader("🚥 자산별 투자 신호등")
-cols = st.columns(2)
-
-assets = [
-    ("주식", data['주식'], "🔴 위험"),
-    ("채권", data['채권'], "🟡 주의"),
-    ("현금", data['현금'], "🟢 안전"),
-    ("원자재", data['원자재'], "⚪ 중립")
-]
-
-for i, (name, percent, status) in enumerate(assets):
-    with cols[i % 2]:
-        st.metric(label=name, value=f"{percent}%", delta=status)
-
-st.divider()
-
-# 6. 행동 가이드
-st.warning("💡 **Action Plan:** 현재 주식 비중을 낮추고 현금을 확보하여 다음 기회를 기다릴 때입니다.")
+# 5. 추천 비중 표시
+st.subheader("🚥 추천 자산 비중")
+c1, c2, c3 = st.columns(3)
+c1.metric("주식", f"{stock_p}%")
+c2.metric("채권", f"{bond_p}%")
+c3.metric("현금", f"{cash_p}%")
