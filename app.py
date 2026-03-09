@@ -53,4 +53,22 @@ with col2:
         st.write("이미지 로딩 중...")
 
 # 날씨 및 지수 표시
-st.markdown(f"<h1 style='
+st.markdown(f"<h1 style='text-align: center; font-size: 80px; margin-bottom: 0;'>{weather_icon}</h1>", unsafe_allow_html=True)
+st.markdown(f"<h2 style='text-align: center; color: {bg_color};'>{weather_text}</h2>", unsafe_allow_html=True)
+st.markdown(f"<p style='text-align: center;'>실시간 공포지수(VIX): <b>{vix}</b></p>", unsafe_allow_html=True)
+
+# 가이드 박스
+st.info(f"💡 **오늘의 투자 가이드:** {advice}")
+
+st.divider()
+
+# 자산 배분 신호등 (숫자 위주 대시보드)
+st.subheader("🚥 추천 자산 배분")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("주식", f"{stock}%")
+c2.metric("채권", f"{bond}%")
+c3.metric("현금", f"{cash}%")
+c4.metric("원자재", f"{commodity}%")
+
+st.divider()
+st.caption("데이터 출처: Yahoo Finance (VIX Index 기준)")
