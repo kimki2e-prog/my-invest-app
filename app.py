@@ -22,9 +22,9 @@ def get_market_indices():
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rsi = 100 - (100 / (1 + (gain / loss).iloc[-1]))
         
-        # [수동 업데이트 구간] 매달 뉴스/통계청 발표를 보고 아래 숫자만 수정하세요!
-        leading_idx = 100.5   # 경기선행지수 순환변동치
-        export_growth = 4.6   # 수출 증가율 (%)
+        # [수동 업데이트] 매달 발표되는 뉴스를 보고 아래 숫자만 수정하세요!
+        leading_idx = 100.5   # 경기선행지수 순환변동치 (100 기준)
+        export_growth = 4.6   # 수출 증가율 (%) (0 기준)
         
         return round(vix, 2), round(rsi, 2), leading_idx, export_growth
     except:
@@ -61,7 +61,7 @@ st.markdown(f"<h3 style='text-align: center;'>권장 주식 비중: {stock_weigh
 
 st.divider()
 
-# 7. [수정됨] 오류 없는 안정적인 링크 연결 섹션
+# 7. [수정] 오류 없는 '검색 기반' 링크 연결
 st.subheader("🚥 투자 지표 상세 확인 (클릭)")
 col1, col2, col3, col4 = st.columns(4)
 
@@ -76,11 +76,11 @@ def mini_card(col, title, val, sig, color, link):
         </a>
     """, unsafe_allow_html=True)
 
-# 🔗 2026년 기준 가장 안정적인 링크들
-vix_url = "https://www.google.com/search?q=VIX+index" # 구글 검색결과가 가장 빠르고 안정적입니다.
-rsi_url = "https://finance.yahoo.com/quote/SPY"      # 야후 파이낸스 종목 메인 페이지
-leading_url = "https://www.index.go.kr/unify/idx-info.do?idxCd=1057" # 나라지표 경기지수 (고정주소)
-export_url = "https://eserv.customs.go.kr" # 관세청 수출입무역통계 메인
+# 🔗 2026년 기준 가장 안 깨지는 링크 (구글 검색 활용)
+vix_url = "https://www.google.com/search?q=VIX+index"
+rsi_url = "https://www.google.com/search?q=SPY+RSI+chart" 
+leading_url = "https://www.google.com/search?q=경기선행지수+순환변동치+추이"
+export_url = "https://www.google.com/search?q=최신+수출입동향+보도자료" # <--- 구글 검색으로 교체!
 
 mini_card(col1, "변동성(VIX)", vix, v_sig, v_col, vix_url)
 mini_card(col2, "과열도(RSI)", rsi, f_sig, f_col, rsi_url)
@@ -89,7 +89,7 @@ mini_card(col4, "수출증가율", f"{export_growth}%", e_sig, e_col, export_url
 
 st.divider()
 
-# 8. 자산배분 전략
+# 8. 자산배분 가이드
 st.subheader("📅 중기 자산배분 가이드")
 st.progress(stock_weight / 100)
 
@@ -98,8 +98,8 @@ with c1:
     st.metric("주식 권장 비중", f"{stock_weight}%")
     st.metric("현금/채권 비중", f"{100 - stock_weight}%")
 with c2:
-    if stock_weight >= 70: st.success("🟢 지표가 매우 우호적입니다. 적극적인 투자가 가능합니다.")
+    if stock_weight >= 70: st.success("🟢 지표가 우호적입니다. 공격적 투자가 가능한 시기입니다.")
     elif stock_weight >= 40: st.warning("🟡 지표가 혼조세입니다. 리스크 관리를 병행하세요.")
-    else: st.error("🔴 방어적인 포트폴리오가 필요합니다. 안전자산 비중을 늘리세요.")
+    else: st.error("🔴 방어적인 태세가 필요합니다. 안전자산을 확보하세요.")
 
-st.caption("※ 각 카드를 클릭하면 상세 데이터를 확인할 수 있는 공식 페이지로 이동합니다.")
+st.caption("※ 각 지표 카드를 클릭하면 최신 데이터 검색 결과로 이동합니다.")
