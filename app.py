@@ -5,9 +5,9 @@ import yfinance as yf
 # 1. 페이지 설정
 try:
     img = Image.open("logo.png")
-    st.set_page_config(page_title="중기 투자 전략실", page_icon=img, layout="centered")
+    st.set_page_config(page_title="4대 자산 배분 전략실", page_icon=img, layout="wide")
 except:
-    st.set_page_config(page_title="중기 투자 전략실")
+    st.set_page_config(page_title="4대 자산 배분 전략실", layout="wide")
 
 # 2. 데이터 수집 함수
 def get_market_indices():
@@ -29,112 +29,119 @@ def get_market_indices():
 
 vix, rsi, leading_idx, export_growth = get_market_indices()
 
-# 3. 중기 비중 결정 로직 (기본 비중 25% 시작)
+# 3. [세분화 로직] 자산별 비중 계산
+# 초기값 설정 (기본 주식 비중 25% 기준)
+stock_w = 25
+bond_w = 40
+gold_w = 20
+cash_w = 15
+
 logic_details = []
-stock_weight = 25 
 
-# [지표 1] 경기(선행지수) 
-if leading_idx >= 100:
-    stock_weight += 20
-    logic_details.append(f"✅ **경기 확장기 (+20%):** 선행지수({leading_idx}) 기준선 상회")
-else:
-    stock_weight -= 10
-    logic_details.append(f"⚠️ **경기 수축기 (-10%):** 선행지수({leading_idx}) 기준선 하회")
+# [지표 1] 경기 & 수출 (성장 지표 -> 주식 비중 결정)
+if leading_idx >= 100 and export_growth > 0:
+    stock_w += 25
+    bond_w -= 10
+    logic_details.append("✅ **경기 확장 & 수출 호조:** 주식 비중을 대폭 확대하고 채권 비중을 축소합니다.")
+elif leading_idx < 100 and export_growth < 0:
+    stock_w -= 15
+    bond_w += 15
+    cash_w += 5
+    logic_details.append("⚠️ **경기 수축 & 수출 부진:** 주식 비중을 줄이고 채권 및 현금 비중을 늘려 방어합니다.")
 
-# [지표 2] 한국 수출
-if export_growth > 0:
-    stock_weight += 20
-    logic_details.append(f"✅ **수출 호조 (+20%):** 한국 수출 증가율({export_growth}%) 플러스")
-else:
-    stock_weight -= 10
-    logic_details.append(f"⚠️ **수출 부진 (-10%):** 한국 수출 증가율({export_growth}%) 마이너스")
-
-# [지표 3] 시장 과열도(RSI) - 상세 근거 추가됨!
-if rsi > 65:
-    stock_weight -= 10
-    logic_details.append(f"⚠️ **시장 과열 주의 (-10%):** RSI({rsi}) 기준 단기 과열 신호 포착")
-elif rsi < 35:
-    stock_weight += 15
-    logic_details.append(f"✅ **저점 매수 기회 (+15%):** RSI({rsi}) 기준 과매도 구간 진입")
-else:
-    logic_details.append(f"ℹ️ **시장 심리 적정 (0%):** RSI({rsi})가 중립 범위에 머묾")
-
-# [지표 4] 변동성(VIX)
+# [지표 2] 변동성 VIX (위험 지표 -> 금 & 현금 비중 결정)
 if vix > 25:
-    stock_weight -= 15
-    logic_details.append(f"🚨 **변동성 확대 (-15%):** VIX({vix}) 상승으로 시장 불안 가중")
+    gold_w += 10
+    stock_w -= 10
+    logic_details.append(f"🚨 **시장 불안 고조 (VIX {vix}):** 안전자산인 금(원자재) 비중을 높입니다.")
 elif vix < 15:
-    stock_weight += 5
-    logic_details.append(f"✅ **변동성 안정 (+5%):** VIX({vix})가 낮아 투자 심리 견조")
-else:
-    logic_details.append(f"ℹ️ **변동성 보통 (0%):** VIX({vix}) 기준 특이 신호 없음")
+    gold_w -= 5
+    stock_w += 5
+    logic_details.append(f"✅ **시장 안정기 (VIX {vix}):** 금 비중을 줄이고 공격 자산을 늘립니다.")
 
-# 최종 비중 제한 (5% ~ 95%)
-stock_weight = max(5, min(95, stock_weight))
-safe_weight = 100 - stock_weight
+# [지표 3] 과열도 RSI (심리 지표 -> 현금 비중 결정)
+if rsi > 65:
+    cash_w += 10
+    stock_w -= 10
+    logic_details.append(f"⚠️ **시장 과열 (RSI {rsi}):** 현금 비중을 확보하여 조정에 대비합니다.")
+elif rsi < 35:
+    cash_w -= 5
+    stock_w += 10
+    logic_details.append(f"✅ **과매도 구간 (RSI {rsi}):** 현금을 사용해 주식 저가 매수를 진행합니다.")
 
-# 4. 종합 투자 날씨
-if stock_weight >= 70: weather, w_icon, w_col = "매우 맑음", "☀️", "#2E8B57"
-elif stock_weight >= 45: weather, w_icon, w_col = "구름 조금", "🌤️", "#3CB371"
-elif stock_weight >= 25: weather, w_icon, w_col = "흐림", "☁️", "#FFA500"
-else: weather, w_icon, w_col = "폭풍우", "⛈️", "#FF4B4B"
+# 최종 비중 정규화 (합계 100 유지)
+total = stock_w + bond_w + gold_w + cash_w
+stock_w = round((stock_w / total) * 100)
+bond_w = round((bond_w / total) * 100)
+gold_w = round((gold_w / total) * 100)
+cash_w = 100 - (stock_w + bond_w + gold_w)
 
-# 5. [최상단] 종합 투자 기상도
+# 4. 종합 투자 날씨 결정
+if stock_w >= 50: weather, w_icon, w_col = "공격적 확장", "☀️", "#2E8B57"
+elif stock_w >= 30: weather, w_icon, w_col = "중립적 유지", "🌤️", "#3CB371"
+else: weather, w_icon, w_col = "보수적 방어", "⛈️", "#FF4B4B"
+
+# 5. UI 구성 - 상단 날씨
 st.markdown(f"""
-    <div style='text-align: center; background-color: #f8f9fa; padding: 30px; border-radius: 25px; border: 1px solid #eee; margin-bottom: 30px;'>
-        <p style='font-size: 18px; color: #666; margin-bottom: 5px;'>중기 투자 기상도</p>
-        <h1 style='font-size: 60px; color: {w_col}; margin: 0;'>{w_icon} {weather}</h1>
+    <div style='text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 20px; border: 1px solid #eee; margin-bottom: 20px;'>
+        <p style='font-size: 16px; color: #666; margin-bottom: 0;'>중기 포트폴리오 기상도</p>
+        <h1 style='font-size: 45px; color: {w_col}; margin: 0;'>{w_icon} {weather}</h1>
     </div>
 """, unsafe_allow_html=True)
 
-# 6. 중기 자산배분 비중 카드
-st.subheader("🚥 향후 3~6개월 자산배분 전략")
-c_stock, c_safe = st.columns(2)
-with c_stock:
-    st.markdown(f"<div style='background-color: #e8f5e9; padding: 25px; border-radius: 15px; border: 4px solid #2E8B57; text-align: center;'><h3 style='color: #2E8B57; margin:0;'>주식 비중</h3><h1 style='font-size: 55px; color: #1b5e20; margin:10px 0;'>{stock_weight}%</h1></div>", unsafe_allow_html=True)
-with c_safe:
-    st.markdown(f"<div style='background-color: #ffebee; padding: 25px; border-radius: 15px; border: 4px solid #FF4B4B; text-align: center;'><h3 style='color: #FF4B4B; margin:0;'>안전 자산</h3><h1 style='font-size: 55px; color: #b71c1c; margin:10px 0;'>{safe_weight}%</h1></div>", unsafe_allow_html=True)
+# 6. [핵심] 4대 자산 배분 신호등
+st.subheader("🚥 중기 자산별 권장 비중")
+col1, col2, col3, col4 = st.columns(4)
+
+def asset_card(col, title, weight, color, desc):
+    col.markdown(f"""
+        <div style="background-color: {color}15; padding: 20px; border-radius: 15px; border: 2px solid {color}; text-align: center; height: 160px;">
+            <h4 style="color: {color}; margin: 0;">{title}</h4>
+            <h1 style="font-size: 40px; color: {color}; margin: 10px 0;">{weight}%</h1>
+            <p style="font-size: 12px; color: #666; margin: 0;">{desc}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+asset_card(col1, "주식", stock_w, "#2E8B57", "성장 자산 (ETF/개별)")
+asset_card(col2, "채권", bond_w, "#007BFF", "수익률 방어 (국채)")
+asset_card(col3, "금/원자재", gold_w, "#FFD700", "인플레/위험 헤지")
+asset_card(col4, "현금", cash_w, "#6C757D", "유동성/기회 포착")
 
 st.divider()
 
-# 7. 인터랙티브 지표 카드
-st.subheader("🔍 주요 시장 지표 (상세 정보 🔗)")
-
+# 7. 시장 지표 인터랙티브 카드
+st.subheader("🔍 주요 시장 지표 (클릭 시 상세 정보 🔗)")
 st.markdown("""
     <style>
     .indicator-card {
-        background-color: #ffffff; padding: 15px 5px; border-radius: 12px; border: 1px solid #e0e0e0;
-        text-align: center; transition: all 0.3s ease; cursor: pointer; text-decoration: none !important; display: block;
+        background-color: #ffffff; padding: 12px; border-radius: 10px; border: 1px solid #ddd;
+        text-align: center; transition: all 0.2s; cursor: pointer; text-decoration: none !important; display: block;
     }
-    .indicator-card:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); border-color: #007bff; background-color: #f0f7ff; }
-    .indicator-title { color: #555; font-size: 12px; margin-bottom: 8px; font-weight: bold; }
-    .indicator-value { font-size: 18px; font-weight: 800; color: #222; margin-bottom: 4px; }
-    .indicator-sig { font-size: 14px; font-weight: bold; }
+    .indicator-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #007bff; }
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2, col3, col4 = st.columns(4)
-def link_card(col, title, val, sig, color, url):
+m1, m2, m3, m4 = st.columns(4)
+def link_card(col, title, val, color, url):
     col.markdown(f"""
-        <a href="{url}" target="_blank" class="indicator-card" style="border-top: 6px solid {color};">
-            <div class="indicator-title">{title} 🔗</div>
-            <div class="indicator-value">{val}</div>
-            <div class="indicator-sig" style="color: {color};">{sig}</div>
+        <a href="{url}" target="_blank" class="indicator-card" style="border-top: 5px solid {color};">
+            <div style="font-size: 11px; color: #777;">{title} 🔗</div>
+            <div style="font-size: 18px; font-weight: bold; color: #333;">{val}</div>
         </a>
     """, unsafe_allow_html=True)
 
-link_card(col1, "변동성 VIX", vix, "안전" if vix<22 else "위험", "#2E8B57" if vix<22 else "#FF4B4B", "https://www.google.com/search?q=VIX+index+chart")
-link_card(col2, "과열도 RSI", rsi, "기회" if rsi<40 else "주의", "#2E8B57" if rsi<40 else "#FF4B4B", "https://www.google.com/search?q=SPY+RSI+indicator")
-link_card(col3, "경기 선행", leading_idx, "확장" if leading_idx>=100 else "수축", "#2E8B57" if leading_idx>=100 else "#FF4B4B", "https://www.google.com/search?q=경기선행지수+순환변동치")
-link_card(col4, "한국 수출", f"{export_growth}%", "호조" if export_growth>0 else "부진", "#2E8B57" if export_growth>0 else "#FF4B4B", "https://www.google.com/search?q=최신+수출입동향+보도자료")
+link_card(m1, "변동성 VIX", vix, "#2E8B57" if vix<22 else "#FF4B4B", "https://www.google.com/search?q=VIX+index")
+link_card(m2, "과열도 RSI", rsi, "#2E8B57" if rsi<40 else "#FF4B4B", "https://www.google.com/search?q=SPY+RSI")
+link_card(m3, "경기 선행", leading_idx, "#2E8B57" if leading_idx>=100 else "#FF4B4B", "https://www.google.com/search?q=경기선행지수")
+link_card(m4, "한국 수출", f"{export_growth}%", "#2E8B57" if export_growth>0 else "#FF4B4B", "https://www.google.com/search?q=수출입동향")
 
 st.divider()
 
-# 8. 자산배분 근거 (모든 지표 반영 완료!)
-with st.expander("🧐 자산배분 결정 근거 확인하기"):
-    st.write(f"본 모델은 기본 주식 비중 **25%**에서 시작하여 시장 상황에 따라 비중을 조절합니다.")
+# 8. 자산배분 근거 (Expander)
+with st.expander("🧐 세부 자산배분 결정 근거 보기"):
+    st.write(f"기본 주식 비중 **25%**를 기준으로 4대 자산의 상관관계를 분석한 결과입니다.")
     for d in logic_details:
         st.write(d)
-    st.info(f"종합적인 중기 분석 결과, **주식 {stock_weight}% / 안전자산 {safe_weight}%** 배분을 권장합니다.")
+    st.info(f"이 포트폴리오는 시장의 변동성을 금과 채권으로 방어하면서, 경기 회복 시 주식 수익률을 극대화하도록 설계되었습니다.")
 
-st.caption("※ 지표 카드를 클릭하면 상세 데이터 검색 결과 페이지로 연결됩니다.")
+st.caption("※ 본 데이터는 투자 참고용이며 최종 판단은 투자자 본인에게 있습니다.")
