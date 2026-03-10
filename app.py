@@ -29,23 +29,23 @@ def get_market_indices():
 
 vix, rsi, leading_idx, export_growth = get_market_indices()
 
-# 3. 자산별 비중 계산 (주식 최소 30% 보정 로직 포함)
+# 3. 자산별 비중 계산 (기본 주식 25% -> 공격적 가산점 적용)
 stock_w, bond_w, gold_w, cash_w = 25, 40, 20, 15
 
-# 지표별 상태 및 비중 가감
-if vix > 25: vix_sig, vix_col, vix_desc = "위험", "#FF4B4B", "안전자산(금) 확보"; gold_w += 10; stock_w -= 10
-elif vix < 15: vix_sig, vix_col, vix_desc = "안전", "#2E8B57", "주식 비중 확대"; gold_w -= 5; stock_w += 5
+# [공격적 조정] 지표별 상태 및 비중 가감
+if vix > 25: vix_sig, vix_col, vix_desc = "위험", "#FF4B4B", "안전자산 확보"; gold_w += 10; stock_w -= 15
+elif vix < 15: vix_sig, vix_col, vix_desc = "안전", "#2E8B57", "주식 적극 확대"; gold_w -= 5; stock_w += 15 # +5에서 +15로 상향
 else: vix_sig, vix_col, vix_desc = "적정", "#FFA500", "중립 유지"; 
 
 if rsi > 65: rsi_sig, rsi_col, rsi_desc = "주의", "#FF4B4B", "현금 비중 확보"; cash_w += 10; stock_w -= 10
-elif rsi < 35: rsi_sig, rsi_col, rsi_desc = "기회", "#2E8B57", "주식 저가 매수"; cash_w -= 5; stock_w += 10
+elif rsi < 35: rsi_sig, rsi_col, rsi_desc = "기회", "#2E8B57", "적극 저가 매수"; cash_w -= 10; stock_w += 20 # +10에서 +20으로 상향
 else: rsi_sig, rsi_col, rsi_desc = "중립", "#FFA500", "가격 적정 수준"; 
 
-if leading_idx >= 100: eco_sig, eco_col, eco_desc = "확장", "#2E8B57", "주식 비중 확대"; stock_w += 15; bond_w -= 5
-else: eco_sig, eco_col, eco_desc = "수축", "#FF4B4B", "채권 비중 확대"; stock_w -= 10; bond_w += 10
+if leading_idx >= 100: eco_sig, eco_col, eco_desc = "확장", "#2E8B57", "경기 주도주 확대"; stock_w += 20; bond_w -= 10 # +15에서 +20으로 상향
+else: eco_sig, eco_col, eco_desc = "수축", "#FF4B4B", "방어 자산 확대"; stock_w -= 10; bond_w += 15
 
-if export_growth > 0: exp_sig, exp_col, exp_desc = "호조", "#2E8B57", "주식 비중 확대"; stock_w += 10; gold_w -= 5
-else: exp_sig, exp_col, exp_desc = "부진", "#FF4B4B", "보수적 대응"; stock_w -= 10; cash_w += 5
+if export_growth > 0: exp_sig, exp_col, exp_desc = "호조", "#2E8B57", "수익 극대화 전략"; stock_w += 15; gold_w -= 5 # +10에서 +15로 상향
+else: exp_sig, exp_col, exp_desc = "부진", "#FF4B4B", "보수적 대응"; stock_w -= 15; cash_w += 10
 
 # 비중 정규화 및 주식 최소 30% 강제 보정
 total = stock_w + bond_w + gold_w + cash_w
@@ -60,15 +60,16 @@ gold_w = round((gold_w / (bond_w+gold_w+cash_w)) * (100-stock_w))
 cash_w = 100 - (stock_w + bond_w + gold_w)
 
 # 4. 날씨 결정
-if stock_w >= 60: weather, w_icon, w_col = "적극적 확장", "☀️", "#2E8B57"
-elif stock_w >= 40: weather, w_icon, w_col = "안정적 중립", "🌤️", "#3CB371"
-else: weather, w_icon, w_col = "보수적 방어", "⛈️", "#FF4B4B"
+if stock_w >= 65: weather, w_icon, w_col = "적극적 공격", "🔥", "#2E8B57" # 아이콘 변경 및 기준 상향
+elif stock_w >= 45: weather, w_icon, w_col = "안정적 확장", "☀️", "#3CB371"
+elif stock_w >= 30: weather, w_icon, w_col = "보수적 방어", "☁️", "#FFA500"
+else: weather, w_icon, w_col = "위기 관리", "⛈️", "#FF4B4B"
 
 # 5. UI - 상단 기상도
 st.markdown(f"<div style='text-align: center; background-color: #f8f9fa; padding: 25px; border-radius: 20px; border: 1px solid #eee; margin-bottom: 25px;'><p style='font-size: 16px; color: #666; margin-bottom: 0;'>중기 포트폴리오 기상도</p><h1 style='font-size: 45px; color: {w_col}; margin: 0;'>{w_icon} {weather}</h1></div>", unsafe_allow_html=True)
 
 # 6. 자산별 권장 비중 카드
-st.subheader("🚥 자산별 권장 비중 (주식 최소 30%)")
+st.subheader("🚥 자산별 권장 비중 (공격적 비중 반영)")
 c1, c2, c3, c4 = st.columns(4)
 def asset_card(col, title, weight, color):
     col.markdown(f"<div style='background-color: {color}15; padding: 20px; border-radius: 15px; border: 2px solid {color}; text-align: center;'><h4 style='color: {color}; margin: 0;'>{title}</h4><h1 style='font-size: 40px; color: {color}; margin: 10px 0;'>{weight}%</h1></div>", unsafe_allow_html=True)
@@ -80,7 +81,7 @@ asset_card(c4, "현금", cash_w, "#6C757D")
 
 st.divider()
 
-# 7. [이전 버전 복구] 핵심 지표 통합 분석
+# 7. 핵심 지표 통합 분석
 st.subheader("🔍 핵심 지표 통합 분석 (클릭 시 상세 정보 🔗)")
 
 def mini_card(col, title, val, sig, color, desc, link):
@@ -109,7 +110,7 @@ with st.expander("📚 이 포트폴리오는 어떤 원리로 결정되나요? 
     본 앱의 알고리즘은 **'매크로 지표'**와 **'시장 심리'**를 결합하여 자산별 최적 비중을 도출합니다.
     
     ### 1. 주식 (Growth Asset) - 최소 비중 30%
-    * **결정 원리:** 한국 수출 증가율과 경기선행지수가 주가 상승의 핵심 동력입니다. 두 지표가 모두 우호적일 때 비중을 높입니다.
+    * **결정 원리:** 한국 수출 증가율과 경기선행지수가 주가 상승의 핵심 동력입니다. 두 지표가 모두 우호적일 때 비중을 공격적으로 높입니다.
     * **하단 방어:** 시장 상황이 악화되어도 장기 우상향을 고려하여 **최소 30%**의 주식 비중을 유지하도록 설계되었습니다.
     
     ### 2. 채권 (Safety/Income Asset)
@@ -125,7 +126,7 @@ with st.expander("📚 이 포트폴리오는 어떤 원리로 결정되나요? 
     * **역할:** 단기 조정 시 저가 매수를 위한 '총알'을 준비하는 과정입니다.
     
     ---
-    *본 모델은 **중기적 관점(3~6개월)**에서 비중을 재조정하는 '동적 자산배분' 전략을 지향합니다.*
+    *본 모델은 공격적 비중 가산점이 적용되어 상승장에서 더 높은 수익률을 추구합니다.*
     """)
 
 st.caption("※ 본 데이터는 2026년 기준이며, 투자 판단의 최종 책임은 사용자에게 있습니다.")
