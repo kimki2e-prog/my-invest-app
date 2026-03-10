@@ -23,7 +23,7 @@ def get_market_indices():
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rsi = 100 - (100 / (1 + (gain / loss).iloc[-1]))
         
-        # 경기선행지수 순환변동치 (한국 통계청 최근 발표치 반영)
+        # 경기선행지수 순환변동치 (최근 발표치 - 매달 말 업데이트 권장)
         leading_idx = 100.5 
         
         return round(vix, 2), round(rsi, 2), leading_idx
@@ -58,14 +58,14 @@ st.markdown(f"<h3 style='text-align: center;'>향후 3~6개월 권장 주식 비
 
 st.divider()
 
-# 지표별 신호등 및 링크 섹션
+# 지표별 신호등 및 링크 섹션 (수정된 링크 반영)
 st.subheader("🚥 현재 시장 신호등 (클릭 시 상세차트)")
 col1, col2, col3 = st.columns(3)
 
 def mini_card_with_link(col, title, val, sig, color, link):
     col.markdown(f"""
         <a href="{link}" target="_blank" style="text-decoration: none; color: inherit;">
-            <div style="background-color: #f8f9fb; padding: 10px; border-radius: 10px; border-top: 5px solid {color}; text-align: center; cursor: pointer; transition: 0.3s;">
+            <div style="background-color: #f8f9fb; padding: 10px; border-radius: 10px; border-top: 5px solid {color}; text-align: center; cursor: pointer;">
                 <small style="color: #666;">{title} 🔗</small><br>
                 <span style="font-size: 18px; font-weight: bold;">{val}</span><br>
                 <span style="color: {color}; font-weight: bold;">{sig}</span>
@@ -73,14 +73,21 @@ def mini_card_with_link(col, title, val, sig, color, link):
         </a>
     """, unsafe_allow_html=True)
 
-# 지표별 실시간 링크 연결
-mini_card_with_link(col1, "변동성(VIX)", vix, v_sig, v_col, "https://finance.yahoo.com/quote/^VIX")
-mini_card_with_link(col2, "심리(Greed)", rsi, f_sig, f_col, "https://edition.cnn.com/markets/fear-and-greed")
-mini_card_with_link(col3, "경기(선행)", leading_idx, l_sig, l_col, "https://index.go.kr/unify/idx-info.do?idxCd=1057")
+# 🔗 수정된 링크 주소들
+# 1. VIX: 인베스팅닷컴이 한글 지원 및 차트가 깔끔합니다.
+vix_link = "https://kr.investing.com/indices/volatility-s-p-500"
+# 2. 공포탐욕: CNN 공식 페이지
+fear_link = "https://edition.cnn.com/markets/fear-and-greed"
+# 3. 경기선행지수: 통계청(KOSIS) 국가통계포털 메인 지표 페이지 (가장 정확함)
+leading_link = "https://kosis.kr/visual/mainIndicators/mainIndex.do"
+
+mini_card_with_link(col1, "변동성(VIX)", vix, v_sig, v_col, vix_link)
+mini_card_with_link(col2, "심리(Greed)", rsi, f_sig, f_col, fear_link)
+mini_card_with_link(col3, "경기(선행)", leading_idx, l_sig, l_col, leading_link)
 
 st.divider()
 
-# 자산배분 가이드
+# 자산배분 전략 대시보드
 st.subheader("📅 3~6개월 자산배분 전략")
 st.progress(stock_weight / 100)
 
@@ -96,4 +103,4 @@ with c2:
     else:
         st.error("🔴 경기 수축기입니다. 자산 방어에 집중하세요.")
 
-st.caption("※ 지표 카드를 클릭하면 상세 차트 페이지로 이동합니다.")
+st.caption("※ 지표 카드를 클릭하면 공식 통계 및 실시간 차트 페이지로 연결됩니다.")
