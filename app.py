@@ -29,23 +29,23 @@ def get_market_indices():
 
 vix, rsi, leading_idx, export_growth = get_market_indices()
 
-# 3. 자산별 비중 계산 (기본 주식 25% -> 최소 30% 보정 로직)
+# 3. 자산별 비중 계산 (주식 최소 30% 보정 로직 포함)
 stock_w, bond_w, gold_w, cash_w = 25, 40, 20, 15
 
-# 지표별 상태 정의
-if vix > 25: vix_sig, vix_col, vix_desc = "위험", "#FF4B4B", "불안 확산으로 금 비중 확대"; gold_w += 10; stock_w -= 10
-elif vix < 15: vix_sig, vix_col, vix_desc = "안전", "#2E8B57", "심리 안정으로 주식 비중 확대"; gold_w -= 5; stock_w += 5
-else: vix_sig, vix_col, vix_desc = "적정", "#FFA500", "변동성 평이, 중립 유지"
+# 지표별 상태 및 비중 가감
+if vix > 25: vix_sig, vix_col, vix_desc = "위험", "#FF4B4B", "안전자산(금) 확보"; gold_w += 10; stock_w -= 10
+elif vix < 15: vix_sig, vix_col, vix_desc = "안전", "#2E8B57", "주식 비중 확대"; gold_w -= 5; stock_w += 5
+else: vix_sig, vix_col, vix_desc = "적정", "#FFA500", "중립 유지"; 
 
-if rsi > 65: rsi_sig, rsi_col, rsi_desc = "주의", "#FF4B4B", "단기 과열로 현금 비중 확보"; cash_w += 10; stock_w -= 10
-elif rsi < 35: rsi_sig, rsi_col, rsi_desc = "기회", "#2E8B57", "과매도로 주식 저가 매수 시점"; cash_w -= 5; stock_w += 10
-else: rsi_sig, rsi_col, rsi_desc = "중립", "#FFA500", "가격 부담 적정, 관망 유지"
+if rsi > 65: rsi_sig, rsi_col, rsi_desc = "주의", "#FF4B4B", "현금 비중 확보"; cash_w += 10; stock_w -= 10
+elif rsi < 35: rsi_sig, rsi_col, rsi_desc = "기회", "#2E8B57", "주식 저가 매수"; cash_w -= 5; stock_w += 10
+else: rsi_sig, rsi_col, rsi_desc = "중립", "#FFA500", "가격 적정 수준"; 
 
-if leading_idx >= 100: eco_sig, eco_col, eco_desc = "확장", "#2E8B57", "경기 회복기로 주식 비중 확대"; stock_w += 15; bond_w -= 5
-else: eco_sig, eco_col, eco_desc = "수축", "#FF4B4B", "경기 둔화로 채권 비중 확대"; stock_w -= 10; bond_w += 10
+if leading_idx >= 100: eco_sig, eco_col, eco_desc = "확장", "#2E8B57", "주식 비중 확대"; stock_w += 15; bond_w -= 5
+else: eco_sig, eco_col, eco_desc = "수축", "#FF4B4B", "채권 비중 확대"; stock_w -= 10; bond_w += 10
 
-if export_growth > 0: exp_sig, exp_col, exp_desc = "호조", "#2E8B57", "수출 증가로 기업 이익 개선"; stock_w += 10; gold_w -= 5
-else: exp_sig, exp_col, exp_desc = "부진", "#FF4B4B", "수출 감소로 보수적 대응"; stock_w -= 10; cash_w += 5
+if export_growth > 0: exp_sig, exp_col, exp_desc = "호조", "#2E8B57", "주식 비중 확대"; stock_w += 10; gold_w -= 5
+else: exp_sig, exp_col, exp_desc = "부진", "#FF4B4B", "보수적 대응"; stock_w -= 10; cash_w += 5
 
 # 비중 정규화 및 주식 최소 30% 강제 보정
 total = stock_w + bond_w + gold_w + cash_w
@@ -60,7 +60,7 @@ gold_w = round((gold_w / (bond_w+gold_w+cash_w)) * (100-stock_w))
 cash_w = 100 - (stock_w + bond_w + gold_w)
 
 # 4. 날씨 결정
-if stock_w >= 60: weather, w_icon, w_col = "공격적 확장", "☀️", "#2E8B57"
+if stock_w >= 60: weather, w_icon, w_col = "적극적 확장", "☀️", "#2E8B57"
 elif stock_w >= 40: weather, w_icon, w_col = "안정적 중립", "🌤️", "#3CB371"
 else: weather, w_icon, w_col = "보수적 방어", "⛈️", "#FF4B4B"
 
@@ -68,7 +68,7 @@ else: weather, w_icon, w_col = "보수적 방어", "⛈️", "#FF4B4B"
 st.markdown(f"<div style='text-align: center; background-color: #f8f9fa; padding: 25px; border-radius: 20px; border: 1px solid #eee; margin-bottom: 25px;'><p style='font-size: 16px; color: #666; margin-bottom: 0;'>중기 포트폴리오 기상도</p><h1 style='font-size: 45px; color: {w_col}; margin: 0;'>{w_icon} {weather}</h1></div>", unsafe_allow_html=True)
 
 # 6. 자산별 권장 비중 카드
-st.subheader("🚥 자산별 권장 비중 (주식 최소 30% 설정)")
+st.subheader("🚥 자산별 권장 비중 (주식 최소 30%)")
 c1, c2, c3, c4 = st.columns(4)
 def asset_card(col, title, weight, color):
     col.markdown(f"<div style='background-color: {color}15; padding: 20px; border-radius: 15px; border: 2px solid {color}; text-align: center;'><h4 style='color: {color}; margin: 0;'>{title}</h4><h1 style='font-size: 40px; color: {color}; margin: 10px 0;'>{weight}%</h1></div>", unsafe_allow_html=True)
@@ -80,29 +80,36 @@ asset_card(c4, "현금", cash_w, "#6C757D")
 
 st.divider()
 
-# 7. 핵심 지표 4분할 통합 분석
+# 7. [이전 버전 복구] 핵심 지표 통합 분석
 st.subheader("🔍 핵심 지표 통합 분석 (클릭 시 상세 정보 🔗)")
-st.markdown("""<style>.integrated-card { background-color: #ffffff; padding: 18px; border-radius: 12px; border: 1px solid #e0e0e0; transition: all 0.3s ease; cursor: pointer; text-decoration: none !important; display: block; height: 180px; }.integrated-card:hover { transform: translateY(-5px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-color: #007bff; }</style>""", unsafe_allow_html=True)
+
+def mini_card(col, title, val, sig, color, desc, link):
+    col.markdown(f"""
+        <a href="{link}" target="_blank" style="text-decoration: none;">
+            <div style="background-color: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid #ddd; border-top: 6px solid {color}; text-align: center;">
+                <p style="color: #666; font-size: 12px; margin:0; font-weight: bold;">{title} 🔗</p>
+                <p style="font-size: 20px; font-weight: bold; margin:8px 0; color: #31333F;">{val}</p>
+                <p style="color: {color}; font-size: 15px; font-weight: bold; margin:0;">{sig} ({desc})</p>
+            </div>
+        </a>
+    """, unsafe_allow_html=True)
+
 m1, m2, m3, m4 = st.columns(4)
-
-def unified_card(col, title, val, sig, color, desc, url):
-    col.markdown(f"""<a href="{url}" target="_blank" class="integrated-card" style="border-top: 6px solid {color};"><div style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 8px;">{title} 🔗</div><div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;"><span style="font-size: 20px; font-weight: 800; color: #222;">{val}</span><span style="font-size: 14px; font-weight: bold; color: {color};">{sig}</span></div><div style="font-size: 13px; color: #555; line-height: 1.4; border-top: 1px solid #eee; padding-top: 8px;">{desc}</div></a>""", unsafe_allow_html=True)
-
-unified_card(m1, "공포 지수 (VIX)", vix, vix_sig, vix_col, vix_desc, "https://www.google.com/search?q=VIX+index")
-unified_card(m2, "과열도 (RSI)", rsi, rsi_sig, rsi_col, rsi_desc, "https://www.google.com/search?q=SPY+RSI")
-unified_card(m3, "경기 선행 (지수)", leading_idx, eco_sig, eco_col, eco_desc, "https://www.google.com/search?q=경기선행지수")
-unified_card(m4, "한국 수출 (증가율)", f"{export_growth}%", exp_sig, exp_col, exp_desc, "https://www.google.com/search?q=수출입동향")
+mini_card(m1, "공포 지수 (VIX)", vix, vix_sig, vix_col, vix_desc, "https://www.google.com/search?q=VIX+index")
+mini_card(m2, "과열도 (RSI)", rsi, rsi_sig, rsi_col, rsi_desc, "https://www.google.com/search?q=SPY+RSI")
+mini_card(m3, "경기 선행 (지수)", leading_idx, eco_sig, eco_col, eco_desc, "https://www.google.com/search?q=경기선행지수")
+mini_card(m4, "한국 수출 (증가율)", f"{export_growth}%", exp_sig, exp_col, exp_desc, "https://www.google.com/search?q=수출입동향")
 
 st.divider()
 
-# 8. [복구됨] 자산배분 전략 상세 가이드 (원리 중심 설명)
+# 8. 자산배분 전략 상세 가이드
 st.subheader("📑 자산배분 전략 상세 가이드")
 with st.expander("📚 이 포트폴리오는 어떤 원리로 결정되나요? (상세 설명 보기)", expanded=True):
     st.markdown("""
     본 앱의 알고리즘은 **'매크로 지표'**와 **'시장 심리'**를 결합하여 자산별 최적 비중을 도출합니다.
     
     ### 1. 주식 (Growth Asset) - 최소 비중 30%
-    * **결정 원리:** 한국 수출 증가율과 경기선행지수가 주가 상승의 핵심 동력입니다. 두 지표가 모두 우호적일 때 비중을 최대 70% 이상으로 높입니다.
+    * **결정 원리:** 한국 수출 증가율과 경기선행지수가 주가 상승의 핵심 동력입니다. 두 지표가 모두 우호적일 때 비중을 높입니다.
     * **하단 방어:** 시장 상황이 악화되어도 장기 우상향을 고려하여 **최소 30%**의 주식 비중을 유지하도록 설계되었습니다.
     
     ### 2. 채권 (Safety/Income Asset)
