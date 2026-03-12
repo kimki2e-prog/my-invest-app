@@ -9,7 +9,7 @@ try:
 except:
     st.set_page_config(page_title="나도 할 수 있다! 자산관리", layout="wide")
 
-# 2. 상단 브랜드 섹션 (추가됨)
+# 2. 상단 브랜드 섹션
 st.markdown("<h1 style='text-align: center; color: #2E8B57;'>나도 할 수 있다! 자산관리</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #666;'>누구나 쉽게 따라 할 수 있는 최적의 자산관리 시스템</h3>", unsafe_allow_html=True)
 st.divider()
@@ -107,21 +107,22 @@ st.divider()
 
 # 8. 상세 ETF 포트폴리오
 st.subheader("📦 누구나 따라 할 수 있는 자산별 ETF 구성")
+st.info("💡 아래 비중은 각 자산군(주식, 채권 등) 내에서의 개별 종목 배분 비율입니다.")
 col_st, col_bd, col_gd = st.columns(3)
 
 with col_st:
     st.markdown("#### 📈 주식 (Growth)")
     st.markdown("""
     **🇰🇷 국내 주식 (50%)**
-    * Tiger 200 (20%)
-    * Rise 코리아밸류업 (15%)
-    * PLUS 고배당주 (15%)
+    * Tiger 200 (20%) - 대표지수
+    * Rise 코리아밸류업 (15%) - 정책수혜
+    * PLUS 고배당주 (15%) - 안정성
     
     **🇺🇸 미국 주식 (50%)**
-    * Tiger S&P500 (20%)
-    * Rise 미국나스닥 100 (10%)
-    * Time글로벌 AI인공지능액티브 (10%)
-    * Kodex 미국AI전력핵심인프라 (10%)
+    * Tiger S&P500 (20%) - 핵심지수
+    * Rise 미국나스닥 100 (10%) - 성장성
+    * Time글로벌 AI인공지능액티브 (10%) - 테마
+    * Kodex 미국AI전력핵심인프라 (10%) - 테마
     """)
 
 with col_bd:
@@ -149,6 +150,30 @@ with col_gd:
 
 st.divider()
 
-# 9. 하단 서명 (추가됨)
+# 9. [보강됨] 자산관리 구성의 논리 (왜 이렇게 투자하나요?)
+st.subheader("💡 좋은투자자의 자산배분 철학")
+with st.expander("🧐 왜 주식/채권/금 비중을 이렇게 구성했나요? (클릭하여 보기)", expanded=True):
+    st.markdown("""
+    본 시스템은 **'지키면서 불리는'** 자산배분의 정석을 따릅니다.
+    
+    ### 1. 주식 (Growth): "성장의 엔진"
+    * **국내/미국 5:5 배분:** 한국의 저평가 매력(밸류업)과 미국의 압도적 성장성(AI/인프라)을 동시에 잡습니다.
+    * **최소 30% 유지:** 시장이 하락해도 주식은 장기 우상향하므로, 반등 시 기회를 놓치지 않기 위한 최소한의 발을 담가둡니다.
+
+    ### 2. 채권 (Safety): "최후의 방어선"
+    * **최소 20% 보장:** 금융 위기나 금리 인하기에 주식의 하락을 방어해 주는 가장 강력한 도구입니다. 
+    * **미국/한국 혼합:** 달러 기반의 안전자산(미국채)과 국내 금리 상황에 대응하는 국고채를 6:4로 섞어 안정성을 극대화했습니다.
+
+    ### 3. 금 (Hedge): "위기에 강한 보험"
+    * **최대 15% 상한:** 금은 위기에는 빛나지만 평소에는 배당이 없습니다. 따라서 전체 수익률을 깎아먹지 않도록 적절한 보험료(15%)만큼만 가입하는 전략입니다.
+    * **KRX 금현물:** 선물 비용이 없는 현물 기반 ETF로 장기 보유에 가장 유리합니다.
+
+    ---
+    **이 시스템은 매크로 지표(VIX, RSI, 수출 등)가 바뀔 때마다 자동으로 가장 유리한 비중을 계산하여 여러분께 제안합니다.**
+    """)
+
+st.divider()
+
+# 10. 하단 서명
 st.markdown("<br><p style='text-align: center; color: #999; font-size: 18px; font-weight: bold;'>By 좋은투자자</p>", unsafe_allow_html=True)
 st.caption("※ 본 데이터는 2026년 기준이며, 투자 판단의 최종 책임은 사용자에게 있습니다.")
