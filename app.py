@@ -90,12 +90,21 @@ asset_card(c4, "현금", cash_w, "#6C757D")
 
 st.divider()
 
-# 7. 핵심 지표 분석
+# 7. 핵심 지표 통합 분석 (상세 툴팁 보강)
 st.subheader("🔍 핵심 지표 통합 분석")
+st.caption("💡 각 지표 카드에 마우스를 올리면 상세 설명을 확인할 수 있습니다.")
+
 m1, m2, m3, m4 = st.columns(4)
-def mini_card(col, title, val, sig, color, desc, link):
+
+# 지표별 설명 텍스트
+vix_tip = "VIX 지수는 S&P 500 지수의 향후 30일간 기대 변동성을 측정하는 '공포 지수'입니다. 불안 심리가 높으면 상승하고, 안정적이면 낮아집니다. 보통 20~30을 정상 범위로 봅니다."
+rsi_tip = "RSI는 주가의 상승 압력과 하락 압력 간의 상대적인 강도를 나타내는 '과열도' 지표입니다. 70 이상이면 과열(매도 검토), 30 이하면 과매도(매수 검토)로 해석합니다."
+leading_tip = "경기선행지수는 향후 경기를 예측하는 지표입니다. 100 이상이면 경기 확장 가능성이 높고, 이 수치가 상승세라면 주식 투자에 유리한 환경이 조성됩니다."
+export_tip = "대한민국 경제의 핵심인 수출 증가율입니다. 수출이 늘어나면 기업 이익이 증가하고 환율이 안정되어 국내 주식 시장에 강력한 호재로 작용합니다."
+
+def mini_card(col, title, val, sig, color, desc, link, help_text):
     col.markdown(f"""
-        <a href="{link}" target="_blank" style="text-decoration: none;">
+        <a href="{link}" target="_blank" style="text-decoration: none;" title="{help_text}">
             <div style="background-color: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid #ddd; border-top: 6px solid {color}; text-align: center;">
                 <p style="color: #666; font-size: 12px; margin:0; font-weight: bold;">{title} 🔗</p>
                 <p style="font-size: 20px; font-weight: bold; margin:8px 0; color: #31333F;">{val}</p>
@@ -104,10 +113,10 @@ def mini_card(col, title, val, sig, color, desc, link):
         </a>
     """, unsafe_allow_html=True)
 
-mini_card(m1, "변동지수 (VIX)", vix, vix_sig, vix_col, vix_desc, "https://www.google.com/search?q=VIX+index")
-mini_card(m2, "과열도 (RSI)", rsi, rsi_sig, rsi_col, rsi_desc, "https://www.google.com/search?q=SPY+RSI")
-mini_card(m3, "경기선행 (지수)", leading_idx, eco_sig, eco_col, eco_desc, "https://www.google.com/search?q=경기선행지수")
-mini_card(m4, "한국수출 (증가율)", f"{export_growth}%", exp_sig, exp_col, exp_desc, "https://www.google.com/search?q=수출입동향")
+mini_card(m1, "변동지수 (VIX)", vix, vix_sig, vix_col, vix_desc, "https://www.google.com/search?q=VIX+index", vix_tip)
+mini_card(m2, "과열도 (RSI)", rsi, rsi_sig, rsi_col, rsi_desc, "https://www.google.com/search?q=SPY+RSI", rsi_tip)
+mini_card(m3, "경기선행 (지수)", leading_idx, eco_sig, eco_col, eco_desc, "https://www.google.com/search?q=경기선행지수", leading_tip)
+mini_card(m4, "한국수출 (증가율)", f"{export_growth}%", exp_sig, exp_col, exp_desc, "https://www.google.com/search?q=수출입동향", export_tip)
 
 st.divider()
 
