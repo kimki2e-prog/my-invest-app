@@ -21,56 +21,60 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.divider()
 
-# 3. 데이터 수집 및 분기별 평균(3개월) 산출 로직
-def get_quarterly_indices():
+# 3. 데이터 수집 (분기 평균 및 실시간 데이터 분리)
+def get_market_indices():
     try:
         # 최근 90일(1분기) 데이터 수집
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
         
-        # VIX 평균 계산
+        # [분기 평균용] VIX 및 RSI
         vix_df = yf.download("^VIX", start=start_date, end=end_date, progress=False)
         vix_avg = vix_df['Close'].mean()
         
-        # RSI 평균 계산 (SPY 기준)
         spy_df = yf.download("SPY", start=start_date, end=end_date, progress=False)
         delta = spy_df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rsi_series = 100 - (100 / (1 + (gain / loss)))
         rsi_avg = rsi_series.mean()
-        
-        # 공포 & 탐욕 지수 (3개월 평균 심리 모델링)
-        fg_avg = 100 - (vix_avg * 2) + (rsi_avg - 50)
-        fg_avg = round(max(0, min(100, fg_avg)))
+
+        # [실시간 반영용] 공포 & 탐욕 지수 (가장 최근 종가 기준)
+        vix_now = vix_df['Close'].iloc[-1]
+        rsi_now = rsi_series.iloc[-1]
+        fg_now = 100 - (vix_now * 2) + (rsi_now - 50)
+        fg_now = round(max(0, min(100, fg_now)))
         
         leading_idx = 100.5   # 경기선행지수
         export_growth = 4.6   # 한국 수출 증가율
         
-        return round(vix_avg, 2), round(rsi_avg, 2), leading_idx, export_growth, fg_avg
+        return round(vix_avg, 2), round(rsi_avg, 2), leading_idx, export_growth, fg_now
     except:
         return 20.0, 50.0, 100.0, 0.0, 50.0
 
-vix, rsi, leading_idx, export_growth, fg_val = get_quarterly_indices()
+vix_avg, rsi_avg, leading_idx, export_growth, fg_val = get_market_indices()
 
-# 4. 자산별 비중 계산 로직 (분기 평균 데이터 기반)
+# 4. 자산별 비중 계산 로직 (분기 평균 데이터 기반으로 안정성 확보)
 stock_w, bond_w, gold_w, cash_w = 40, 25, 20, 15
 
-# 지표 판별 및 비중 조정
-if vix > 22: vix_sig, vix_col, vix_desc = "주의", "#FF4B4B", "방어 강화"; gold_w += 10; stock_w -= 5
-elif vix < 16: vix_sig, vix_col, vix_desc = "안정", "#2E8B57", "비중 유지"; stock_w += 10
+# VIX 평균 기반 조정
+if vix_avg > 22: vix_sig, vix_col, vix_desc = "주의", "#FF4B4B", "방어 강화"; gold_w += 10; stock_w -= 5
+elif vix_avg < 16: vix_sig, vix_col, vix_desc = "안정", "#2E8B57", "비중 유지"; stock_w += 10
 else: vix_sig, vix_col, vix_desc = "적정", "#FFA500", "보통"
 
-if rsi > 60: rsi_sig, rsi_col, rsi_desc = "과열", "#FF4B4B", "점진 매도"; cash_w += 10; stock_w -= 5
-elif rsi < 40: rsi_sig, rsi_col, rsi_desc = "저평가", "#2E8B57", "분할 매수"; stock_w += 15
+# RSI 평균 기반 조정
+if rsi_avg > 60: rsi_sig, rsi_col, rsi_desc = "과열", "#FF4B4B", "점진 매도"; cash_w += 10; stock_w -= 5
+elif rsi_avg < 40: rsi_sig, rsi_col, rsi_desc = "저평가", "#2E8B57", "분할 매수"; stock_w += 15
 else: rsi_sig, rsi_col, rsi_desc = "중립", "#FFA500", "적정"
 
-# 공포 & 탐욕 지수 상태 (분기 평균 기준)
+# 실시간 공포 & 탐욕 상태 판별 (현재 시점)
 if fg_val >= 75: fg_sig, fg_col, fg_desc = "극도의 탐욕", "#FF4B4B", "과열 주의"
 elif fg_val <= 25: fg_sig, fg_col, fg_desc = "극도의 공포", "#2E8B57", "매수 기회"
-else: fg_sig, fg_col, fg_desc = "심리 안정", "#6C757D", "보통"
+elif fg_val >= 55: fg_sig, fg_col, fg_desc = "탐욕", "#FFA500", "추격 금지"
+elif fg_val <= 45: fg_sig, fg_col, fg_desc = "공포", "#3CB371", "분할 매수"
+else: fg_sig, fg_col, fg_desc = "중립", "#6C757D", "관찰"
 
-# 제약 조건 및 정규화
+# 비중 정규화
 if gold_w > 15: gold_w = 15
 if stock_w < 30: stock_w = 30
 total = stock_w + bond_w + gold_w + cash_w
@@ -82,7 +86,7 @@ if bond_w < 20: stock_w -= (20 - bond_w); bond_w = 20
 now = datetime.now()
 quarter = (now.month - 1) // 3 + 1
 st.info(f"📅 **현재는 {now.year}년 {quarter}분기 전략 구간입니다.** (다음 정기 리밸런싱: {now.year if quarter < 4 else now.year+1}년 {(quarter % 4) * 3 + 1}월 1일)")
-st.success("💡 본 수치는 최근 3개월간의 시장 평균 지표를 분석한 결과입니다. 일일 변동성에 흔들리지 말고 분기별 1회 리밸런싱을 권장합니다.")
+st.success("💡 자산 비중은 시장 노이즈를 제거하기 위해 **3개월 평균 지표**를 따르며, **공포&탐욕 지수**는 현재 시장 심리를 실시간으로 반영합니다.")
 
 # 6. 자산별 권장 비중 카드
 st.subheader("🚥 이번 분기 권장 비중")
@@ -96,16 +100,16 @@ asset_card(c4, "현금", cash_w, "#6C757D")
 
 st.divider()
 
-# 7. 핵심 지표 통합 분석 (5열 배치)
-st.subheader("🔍 분기별 시장 지표 분석 (3개월 평균)")
+# 7. 핵심 지표 통합 분석 (실시간 + 평균 혼합)
+st.subheader("🔍 핵심 지표 통합 분석")
 m1, m2, m3, m4, m5 = st.columns(5)
 
 def mini_card(col, title, val, sig, color, desc, link, help_text):
     col.markdown(f"""<a href="{link}" target="_blank" style="text-decoration: none;" title="{help_text}"><div style="background-color: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid #ddd; border-top: 6px solid {color}; text-align: center;"><p style="color: #666; font-size: 11px; margin:0; font-weight: bold;">{title} 🔗</p><p style="font-size: 18px; font-weight: bold; margin:8px 0; color: #31333F;">{val}</p><p style="color: {color}; font-size: 13px; font-weight: bold; margin:0;">{sig}</p><p style="color: #999; font-size: 11px; margin:0;">({desc})</p></div></a>""", unsafe_allow_html=True)
 
-mini_card(m1, "3개월 변동성(VIX)", vix, vix_sig, vix_col, vix_desc, "https://www.google.com/search?q=VIX+index", "최근 3개월간 시장의 불안도를 나타내는 평균 수치입니다.")
-mini_card(m2, "3개월 과열도(RSI)", rsi, rsi_sig, rsi_col, rsi_desc, "https://www.google.com/search?q=SPY+RSI", "최근 3개월간 주가가 과열되었는지 분석한 평균 수치입니다.")
-mini_card(m3, "공포&탐욕 평균", fg_val, fg_sig, fg_col, fg_desc, "https://edition.cnn.com/markets/fear-and-greed", "시장의 심리 상태를 분기 평균으로 계산한 수치입니다.")
+mini_card(m1, "3개월 변동성(VIX)", vix_avg, vix_sig, vix_col, vix_desc, "https://www.google.com/search?q=VIX+index", "리밸런싱 비중의 기준이 되는 3개월 평균 변동성입니다.")
+mini_card(m2, "3개월 과열도(RSI)", rsi_avg, rsi_sig, rsi_col, rsi_desc, "https://www.google.com/search?q=SPY+RSI", "리밸런싱 비중의 기준이 되는 3개월 평균 과열도입니다.")
+mini_card(m3, "공포&탐욕(실시간)", fg_val, fg_sig, fg_col, fg_desc, "https://edition.cnn.com/markets/fear-and-greed", "현재 시점의 시장 심리를 실시간으로 나타냅니다.")
 mini_card(m4, "경기선행지수", leading_idx, "확장", "#2E8B57", "주도주 집중", "https://www.google.com/search?q=경기선행지수", "향후 경기 방향을 예고하는 지표입니다.")
 mini_card(m5, "수출 증가율", f"{export_growth}%", "호조", "#2E8B57", "성장 가속", "https://www.google.com/search?q=수출입동향", "대한민국 경제의 기초 체력을 나타냅니다.")
 
@@ -182,4 +186,4 @@ st.divider()
 
 # 10. 하단 서명
 st.markdown("<br><p style='text-align: center; color: #999; font-size: 18px; font-weight: bold;'>By 좋은투자자</p>", unsafe_allow_html=True)
-st.caption("※ 본 데이터는 분기별 평균치를 기반으로 하며, 최종 투자 책임은 사용자에게 있습니다.")
+st.caption("※ 자산 비중은 분기 평균, 심리 지표는 실시간 데이터를 기반으로 합니다. 최종 투자 책임은 사용자에게 있습니다.")
