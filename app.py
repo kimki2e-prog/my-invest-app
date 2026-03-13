@@ -186,4 +186,4 @@ st.divider()
 
 # 10. 하단 서명
 st.markdown("<br><p style='text-align: center; color: #999; font-size: 18px; font-weight: bold;'>By 좋은투자자</p>", unsafe_allow_html=True)
-st.caption("※ 자산 비중은 분기 평균, 심리 지표는 실시간 데이터를 기반으로 합니다. 최종 투자 책임은 사용자에게 있습니다.")
+st.caption("※ 본 데이터는 분기별 평균치를 기반으로 하며, 최종 투자 책임은 사용자에게 있습니다.")
